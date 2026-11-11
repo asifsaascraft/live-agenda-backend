@@ -3,7 +3,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 
 import {
-  register,
+  setupAdmin,
   login,
   refreshAccessToken,
   logout,
@@ -29,12 +29,6 @@ const authLimiter = rateLimit({
     success: false,
     message: "Too many authentication attempts. Please try again later.",
   },
-  handler: (req, res) => {
-    return res.status(429).json({
-      success: false,
-      message: "Too many authentication attempts. Please try again later.",
-    });
-  },
 });
 
 const passwordResetLimiter = rateLimit({
@@ -49,32 +43,60 @@ const passwordResetLimiter = rateLimit({
 });
 
 // ==========================================
-// AUTHENTICATION ROUTES
+// ONE-TIME ADMIN SETUP
+// POST /api/auth/setup
 // ==========================================
 
-// Register
-router.post("/register", authLimiter, register);
+router.post("/setup", authLimiter, setupAdmin);
 
-// Login
+// ==========================================
+// ADMIN LOGIN
+// POST /api/auth/login
+// ==========================================
+
 router.post("/login", authLimiter, login);
 
-// Refresh Token
-router.post("/refresh-token", authLimiter, refreshAccessToken);
+// ==========================================
+// REFRESH ACCESS TOKEN
+// POST /api/auth/refresh-token
+// ==========================================
 
-// Logout
+router.post(
+  "/refresh-token",
+  authLimiter,
+  refreshAccessToken
+);
+
+// ==========================================
+// ADMIN LOGOUT
+// POST /api/auth/logout
+// ==========================================
+
 router.post("/logout", logout);
 
-// Get Logged-in User
+// ==========================================
+// GET ADMIN PROFILE
+// GET /api/auth/me
+// ==========================================
+
 router.get("/me", protect, getMe);
 
-// Forgot Password
+// ==========================================
+// FORGOT ADMIN PASSWORD
+// POST /api/auth/forgot-password
+// ==========================================
+
 router.post(
   "/forgot-password",
   passwordResetLimiter,
   forgotPassword
 );
 
-// Reset Password
+// ==========================================
+// RESET ADMIN PASSWORD
+// POST /api/auth/reset-password/:token
+// ==========================================
+
 router.post(
   "/reset-password/:token",
   passwordResetLimiter,

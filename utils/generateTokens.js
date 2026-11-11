@@ -1,7 +1,11 @@
 
 import jwt from "jsonwebtoken";
 
-export const generateTokens = (userId, role) => {
+// ==========================================
+// GENERATE ADMIN ACCESS & REFRESH TOKENS
+// ==========================================
+
+export const generateTokens = (adminId) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is missing.");
   }
@@ -10,10 +14,14 @@ export const generateTokens = (userId, role) => {
     throw new Error("JWT_REFRESH_SECRET is missing.");
   }
 
+  if (!adminId) {
+    throw new Error("Admin ID is required to generate tokens.");
+  }
+
+  // Access Token
   const accessToken = jwt.sign(
     {
-      id: userId.toString(),
-      role,
+      id: adminId.toString(),
     },
     process.env.JWT_SECRET,
     {
@@ -21,9 +29,10 @@ export const generateTokens = (userId, role) => {
     }
   );
 
+  // Refresh Token
   const refreshToken = jwt.sign(
     {
-      id: userId.toString(),
+      id: adminId.toString(),
     },
     process.env.JWT_REFRESH_SECRET,
     {
@@ -36,3 +45,5 @@ export const generateTokens = (userId, role) => {
     refreshToken,
   };
 };
+
+export default generateTokens;

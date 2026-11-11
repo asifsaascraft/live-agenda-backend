@@ -4,8 +4,11 @@ import swaggerJsdoc from "swagger-jsdoc";
 import paths from "./index.js";
 import schemas from "./schemas.js";
 
-const localUrl =
-  `http://localhost:${process.env.PORT || 5000}/api`;
+// ==========================================
+// SWAGGER SERVER URLS
+// ==========================================
+
+const localUrl = `http://localhost:${process.env.PORT || 5000}/api`;
 
 const servers = [
   {
@@ -14,12 +17,23 @@ const servers = [
   },
 ];
 
+// Production API URL
+
 if (process.env.API_BASE_URL) {
+  const productionUrl = process.env.API_BASE_URL.replace(
+    /\/+$/,
+    ""
+  );
+
   servers.push({
-    url: `${process.env.API_BASE_URL.replace(/\/+$/, "")}/api`,
+    url: `${productionUrl}/api`,
     description: "Production",
   });
 }
+
+// ==========================================
+// SWAGGER CONFIGURATION
+// ==========================================
 
 const options = {
   definition: {
@@ -29,7 +43,7 @@ const options = {
       title: "Live Agenda API",
       version: "1.0.0",
       description:
-        "Official REST API documentation for the Live Agenda Backend.",
+        "Official REST API documentation for the Live Agenda Backend. The system has one admin account for managing the platform. Public APIs can be accessed without authentication, while admin management APIs require JWT authentication.",
     },
 
     servers,
@@ -37,12 +51,20 @@ const options = {
     tags: [
       {
         name: "Authentication",
-        description: "Authentication and account management APIs.",
+        description:
+          "One-time admin setup, admin login, token management and password recovery.",
       },
 
       {
         name: "Admin",
-        description: "Administrative APIs.",
+        description:
+          "Protected administrative APIs for managing Live Agenda.",
+      },
+
+      {
+        name: "Public",
+        description:
+          "Public APIs accessible without admin authentication.",
       },
     ],
 
@@ -52,6 +74,8 @@ const options = {
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
+          description:
+            "Enter the admin access token received from the login endpoint.",
         },
       },
 

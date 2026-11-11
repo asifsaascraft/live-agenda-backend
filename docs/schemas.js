@@ -1,16 +1,15 @@
 
 export const schemas = {
   // ==========================================
-  // USER SCHEMA
+  // ADMIN SCHEMA
   // ==========================================
 
   Admin: {
     type: "object",
-
     properties: {
       id: {
         type: "string",
-        example: "6872bcd90123456789abcd12",
+        example: "primary-admin",
       },
 
       name: {
@@ -20,13 +19,8 @@ export const schemas = {
 
       email: {
         type: "string",
-        example: "asif@example.com",
-      },
-
-      role: {
-        type: "string",
-        enum: ["user", "admin"],
-        example: "user",
+        format: "email",
+        example: "admin@example.com",
       },
 
       createdAt: {
@@ -38,12 +32,11 @@ export const schemas = {
   },
 
   // ==========================================
-  // AUTH SUCCESS RESPONSE
+  // ADMIN SETUP RESPONSE
   // ==========================================
 
-  AuthResponse: {
+  AdminSetupResponse: {
     type: "object",
-
     properties: {
       success: {
         type: "boolean",
@@ -52,15 +45,43 @@ export const schemas = {
 
       message: {
         type: "string",
-        example: "Login successful.",
+        example:
+          "Admin account created successfully. Please login.",
       },
 
       data: {
         type: "object",
-
         properties: {
-          user: {
-            $ref: "#/components/schemas/User",
+          admin: {
+            $ref: "#/components/schemas/Admin",
+          },
+        },
+      },
+    },
+  },
+
+  // ==========================================
+  // ADMIN AUTH RESPONSE
+  // ==========================================
+
+  AuthResponse: {
+    type: "object",
+    properties: {
+      success: {
+        type: "boolean",
+        example: true,
+      },
+
+      message: {
+        type: "string",
+        example: "Admin login successful.",
+      },
+
+      data: {
+        type: "object",
+        properties: {
+          admin: {
+            $ref: "#/components/schemas/Admin",
           },
 
           accessToken: {
@@ -78,7 +99,6 @@ export const schemas = {
 
   RefreshTokenResponse: {
     type: "object",
-
     properties: {
       success: {
         type: "boolean",
@@ -87,12 +107,12 @@ export const schemas = {
 
       message: {
         type: "string",
-        example: "Access token refreshed successfully.",
+        example:
+          "Access token refreshed successfully.",
       },
 
       data: {
         type: "object",
-
         properties: {
           accessToken: {
             type: "string",
@@ -104,12 +124,11 @@ export const schemas = {
   },
 
   // ==========================================
-  // GENERIC RESPONSE
+  // GENERIC MESSAGE RESPONSE
   // ==========================================
 
   MessageResponse: {
     type: "object",
-
     properties: {
       success: {
         type: "boolean",
@@ -134,7 +153,6 @@ export const schemas = {
 
   ErrorResponse: {
     type: "object",
-
     properties: {
       success: {
         type: "boolean",

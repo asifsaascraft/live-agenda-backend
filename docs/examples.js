@@ -1,51 +1,89 @@
 
 export const examples = {
   // ==========================================
-  // AUTHENTICATION EXAMPLES
+  // ADMIN SETUP REQUEST
   // ==========================================
 
-  RegisterRequest: {
+  SetupAdminRequest: {
     value: {
       name: "Asif Jamal",
-      email: "asif@example.com",
-      password: "Password@123",
+      email: "admin@example.com",
+      password: "YourStrongPassword123",
     },
   },
+
+  // ==========================================
+  // ADMIN SETUP RESPONSE
+  // ==========================================
+
+  AdminSetupResponse: {
+    value: {
+      success: true,
+      message:
+        "Admin account created successfully. Please login.",
+      data: {
+        admin: {
+          id: "primary-admin",
+          name: "Asif Jamal",
+          email: "admin@example.com",
+          createdAt: "2026-11-11T10:00:00.000Z",
+        },
+      },
+    },
+  },
+
+  // ==========================================
+  // ADMIN LOGIN REQUEST
+  // ==========================================
 
   LoginRequest: {
     value: {
-      email: "asif@example.com",
-      password: "Password@123",
+      email: "admin@example.com",
+      password: "YourStrongPassword123",
     },
   },
 
-  ForgotPasswordRequest: {
-    value: {
-      email: "asif@example.com",
-    },
-  },
+  // ==========================================
+  // ADMIN LOGIN RESPONSE
+  // ==========================================
 
-  ResetPasswordRequest: {
-    value: {
-      password: "NewPassword@123",
-    },
-  },
-
-  AuthSuccessResponse: {
+  AuthResponse: {
     value: {
       success: true,
-      message: "Login successful.",
+      message: "Admin login successful.",
       data: {
-        user: {
-          id: "6872bcd90123456789abcd12",
+        admin: {
+          id: "primary-admin",
           name: "Asif Jamal",
-          email: "asif@example.com",
-          role: "user",
+          email: "admin@example.com",
         },
         accessToken: "your_access_token",
       },
     },
   },
+
+  // ==========================================
+  // ADMIN PROFILE RESPONSE
+  // ==========================================
+
+  AdminProfileResponse: {
+    value: {
+      success: true,
+      message: "Admin profile fetched successfully.",
+      data: {
+        admin: {
+          id: "primary-admin",
+          name: "Asif Jamal",
+          email: "admin@example.com",
+          createdAt: "2026-11-11T10:00:00.000Z",
+        },
+      },
+    },
+  },
+
+  // ==========================================
+  // REFRESH TOKEN RESPONSE
+  // ==========================================
 
   RefreshTokenResponse: {
     value: {
@@ -57,6 +95,20 @@ export const examples = {
     },
   },
 
+  // ==========================================
+  // FORGOT PASSWORD REQUEST
+  // ==========================================
+
+  ForgotPasswordRequest: {
+    value: {
+      email: "admin@example.com",
+    },
+  },
+
+  // ==========================================
+  // FORGOT PASSWORD RESPONSE
+  // ==========================================
+
   ForgotPasswordResponse: {
     value: {
       success: true,
@@ -65,6 +117,32 @@ export const examples = {
       data: null,
     },
   },
+
+  // ==========================================
+  // RESET PASSWORD REQUEST
+  // ==========================================
+
+  ResetPasswordRequest: {
+    value: {
+      password: "NewStrongPassword123",
+    },
+  },
+
+  // ==========================================
+  // LOGOUT RESPONSE
+  // ==========================================
+
+  LogoutResponse: {
+    value: {
+      success: true,
+      message: "Admin logout successful.",
+      data: null,
+    },
+  },
+
+  // ==========================================
+  // GENERIC ERROR RESPONSE
+  // ==========================================
 
   ErrorResponse: {
     value: {

@@ -2,17 +2,16 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 
-import User from "../models/User.js";
+import Admin from "../models/Admin.js";
 
 import asyncHandler from "../utils/asyncHandler.js";
+
 import {
   successResponse,
   errorResponse,
 } from "../utils/response.js";
 
-import {
-  generateTokens,
-} from "../utils/generateTokens.js";
+import { generateTokens } from "../utils/generateTokens.js";
 
 import hashToken from "../utils/hashToken.js";
 
@@ -24,20 +23,25 @@ import {
 import sendEmail from "../utils/sendEmail.js";
 
 // ==========================================
-// HELPER: ISSUE TOKENS
+// HELPER: VALIDATE EMAIL
 // ==========================================
 
-const issueTokens = async (user, res) => {
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+// ==========================================
+// HELPER: ISSUE ADMIN TOKENS
+// ==========================================
+
+const issueTokens = async (admin, res) => {
   const { accessToken, refreshToken } = generateTokens(
-    user._id,
-    user.role
+    admin._id
   );
 
-  const refreshTokenHash = hashToken(refreshToken);
+  admin.refreshTokenHash = hashToken(refreshToken);
 
-  user.refreshTokenHash = refreshTokenHash;
-
-  await user.save();
+  await admin.save();
 
   setRefreshTokenCookie(res, refreshToken);
 
@@ -45,24 +49,67 @@ const issueTokens = async (user, res) => {
 };
 
 // ==========================================
-// 1. REGISTER
-// POST /api/auth/register
+// HELPER: VALIDATE ADMIN SETUP KEY
 // ==========================================
 
-export const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body || {};
+const isValidSetupKey = (providedKey, configuredKey) => {
+  if (
+    typeof providedKey !== "string" ||
+    typeof configuredKey !== "string" ||
+    !providedKey ||
+    !configuredKey
+  ) {
+    return false;
+  }
 
-  if (!name || !email || !password) {
+  const providedBuffer = Buffer.from(providedKey);
+  const configuredBuffer = Buffer.from(configuredKey);
+
+  if (providedBuffer.length !== configuredBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    providedBuffer,
+    configuredBuffer
+  );
+};
+
+// ==========================================
+// 1. SETUP ADMIN
+// POST /api/auth/setup
+// One-time operation
+// ==========================================
+
+export const setupAdmin = asyncHandler(async (req, res) => {
+  const setupKey = req.get("x-admin-setup-key");
+
+  const configuredKey = process.env.ADMIN_SETUP_KEY;
+
+  if (!configuredKey) {
     return errorResponse(res, {
-      statusCode: 400,
-      message: "Name, email and password are required.",
+      statusCode: 503,
+      message: "Admin setup is not configured.",
     });
   }
 
-  if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string") {
+  if (!isValidSetupKey(setupKey, configuredKey)) {
+    return errorResponse(res, {
+      statusCode: 403,
+      message: "Invalid admin setup key.",
+    });
+  }
+
+  const { name, email, password } = req.body || {};
+
+  if (
+    typeof name !== "string" ||
+    typeof email !== "string" ||
+    typeof password !== "string"
+  ) {
     return errorResponse(res, {
       statusCode: 400,
-      message: "Invalid input data.",
+      message: "Name, email and password are required.",
     });
   }
 
@@ -76,9 +123,7 @@ export const register = asyncHandler(async (req, res) => {
     });
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailRegex.test(normalizedEmail)) {
+  if (!isValidEmail(normalizedEmail)) {
     return errorResponse(res, {
       statusCode: 400,
       message: "Please enter a valid email address.",
@@ -92,44 +137,53 @@ export const register = asyncHandler(async (req, res) => {
     });
   }
 
-  const existingUser = await User.findOne({
-    email: normalizedEmail,
-  });
+  // Check whether the single admin already exists.
 
-  if (existingUser) {
+  const existingAdmin = await Admin.findById("primary-admin");
+
+  if (existingAdmin) {
     return errorResponse(res, {
       statusCode: 409,
-      message: "An account with this email already exists.",
+      message: "Admin account has already been initialized.",
     });
   }
 
-  // Never accept role from public registration input.
+  // Create the only permitted admin document.
+  // MongoDB's unique _id prevents concurrent duplicate setup.
 
-  const user = await User.create({
-    name: normalizedName,
-    email: normalizedEmail,
-    password,
-  });
+  try {
+    const admin = await Admin.create({
+      name: normalizedName,
+      email: normalizedEmail,
+      password,
+    });
 
-  const accessToken = await issueTokens(user, res);
-
-  return successResponse(res, {
-    statusCode: 201,
-    message: "Registration successful.",
-    data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+    return successResponse(res, {
+      statusCode: 201,
+      message: "Admin account created successfully. Please login.",
+      data: {
+        admin: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          createdAt: admin.createdAt,
+        },
       },
-      accessToken,
-    },
-  });
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return errorResponse(res, {
+        statusCode: 409,
+        message: "Admin account has already been initialized.",
+      });
+    }
+
+    throw error;
+  }
 });
 
 // ==========================================
-// 2. LOGIN
+// 2. ADMIN LOGIN
 // POST /api/auth/login
 // ==========================================
 
@@ -150,18 +204,18 @@ export const login = asyncHandler(async (req, res) => {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  const user = await User.findOne({
+  const admin = await Admin.findOne({
     email: normalizedEmail,
   }).select("+password");
 
-  if (!user) {
+  if (!admin) {
     return errorResponse(res, {
       statusCode: 401,
       message: "Invalid email or password.",
     });
   }
 
-  const isPasswordValid = await user.matchPassword(password);
+  const isPasswordValid = await admin.matchPassword(password);
 
   if (!isPasswordValid) {
     return errorResponse(res, {
@@ -170,17 +224,16 @@ export const login = asyncHandler(async (req, res) => {
     });
   }
 
-  const accessToken = await issueTokens(user, res);
+  const accessToken = await issueTokens(admin, res);
 
   return successResponse(res, {
     statusCode: 200,
-    message: "Login successful.",
+    message: "Admin login successful.",
     data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
       },
       accessToken,
     },
@@ -221,14 +274,14 @@ export const refreshAccessToken = asyncHandler(
 
     const oldHash = hashToken(refreshToken);
 
-    const user = await User.findById(decoded.id).select(
+    const admin = await Admin.findById(decoded.id).select(
       "+refreshTokenHash"
     );
 
     if (
-      !user ||
-      !user.refreshTokenHash ||
-      user.refreshTokenHash !== oldHash
+      !admin ||
+      !admin.refreshTokenHash ||
+      admin.refreshTokenHash !== oldHash
     ) {
       clearRefreshTokenCookie(res);
 
@@ -238,16 +291,18 @@ export const refreshAccessToken = asyncHandler(
       });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      generateTokens(user._id, user.role);
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+    } = generateTokens(admin._id);
 
     const newHash = hashToken(newRefreshToken);
 
-    // Atomic rotation: only one request can replace the old token.
+    // Atomic refresh token rotation.
 
-    const updatedUser = await User.findOneAndUpdate(
+    const updatedAdmin = await Admin.findOneAndUpdate(
       {
-        _id: user._id,
+        _id: admin._id,
         refreshTokenHash: oldHash,
       },
       {
@@ -260,7 +315,7 @@ export const refreshAccessToken = asyncHandler(
       }
     );
 
-    if (!updatedUser) {
+    if (!updatedAdmin) {
       clearRefreshTokenCookie(res);
 
       return errorResponse(res, {
@@ -282,7 +337,7 @@ export const refreshAccessToken = asyncHandler(
 );
 
 // ==========================================
-// 4. LOGOUT
+// 4. ADMIN LOGOUT
 // POST /api/auth/logout
 // ==========================================
 
@@ -290,13 +345,19 @@ export const logout = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
 
   if (refreshToken) {
+    let decoded;
+
     try {
-      const decoded = jwt.verify(
+      decoded = jwt.verify(
         refreshToken,
         process.env.JWT_REFRESH_SECRET
       );
+    } catch (error) {
+      // Invalid or expired token: clear the cookie below.
+    }
 
-      await User.updateOne(
+    if (decoded && decoded.id === "primary-admin") {
+      await Admin.updateOne(
         {
           _id: decoded.id,
           refreshTokenHash: hashToken(refreshToken),
@@ -307,8 +368,6 @@ export const logout = asyncHandler(async (req, res) => {
           },
         }
       );
-    } catch (error) {
-      // Even an expired or invalid token should be cleared.
     }
   }
 
@@ -316,33 +375,32 @@ export const logout = asyncHandler(async (req, res) => {
 
   return successResponse(res, {
     statusCode: 200,
-    message: "Logout successful.",
+    message: "Admin logout successful.",
   });
 });
 
 // ==========================================
-// 5. GET LOGGED-IN USER
+// 5. GET ADMIN PROFILE
 // GET /api/auth/me
 // ==========================================
 
 export const getMe = asyncHandler(async (req, res) => {
   return successResponse(res, {
     statusCode: 200,
-    message: "User profile fetched successfully.",
+    message: "Admin profile fetched successfully.",
     data: {
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        role: req.user.role,
-        createdAt: req.user.createdAt,
+      admin: {
+        id: req.admin._id,
+        name: req.admin.name,
+        email: req.admin.email,
+        createdAt: req.admin.createdAt,
       },
     },
   });
 });
 
 // ==========================================
-// 6. FORGOT PASSWORD
+// 6. FORGOT ADMIN PASSWORD
 // POST /api/auth/forgot-password
 // ==========================================
 
@@ -359,58 +417,69 @@ export const forgotPassword = asyncHandler(
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await User.findOne({
+    if (!isValidEmail(normalizedEmail)) {
+      return errorResponse(res, {
+        statusCode: 400,
+        message: "Please enter a valid email address.",
+      });
+    }
+
+    const admin = await Admin.findOne({
       email: normalizedEmail,
     });
-
-    // Don't reveal whether an email is registered.
 
     const genericMessage =
       "If an account exists with this email, a password reset link will be sent.";
 
-    if (!user) {
+    // Do not reveal whether the email belongs to the admin.
+
+    if (!admin) {
       return successResponse(res, {
         statusCode: 200,
         message: genericMessage,
       });
     }
 
-    // Generate a secure random token.
-
     const resetToken = crypto.randomBytes(32).toString("hex");
 
-    const hashedResetToken = hashToken(resetToken);
+    admin.passwordResetToken = hashToken(resetToken);
 
-    user.passwordResetToken = hashedResetToken;
+    admin.passwordResetExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
 
-    user.passwordResetExpires = Date.now() + 15 * 60 * 1000;
-
-    await user.save();
+    await admin.save();
 
     const frontendUrl = process.env.FRONTEND_URL;
 
+    if (!frontendUrl) {
+      admin.passwordResetToken = null;
+      admin.passwordResetExpires = null;
+      await admin.save();
+
+      throw new Error("FRONTEND_URL is missing.");
+    }
+
     const resetUrl =
-      `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
+      `${frontendUrl.replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {
       await sendEmail({
-        to: user.email,
-        name: user.name,
-        subject: "Live Agenda - Password Reset",
+        to: admin.email,
+        name: admin.name,
+        subject: "Live Agenda - Admin Password Reset",
         templateKey: process.env.PASSWORD_RESET_TEMPLATE_KEY,
         mergeInfo: {
-          name: user.name,
+          name: admin.name,
           reset_url: resetUrl,
           expiry_time: "15 minutes",
         },
       });
     } catch (error) {
-      // Remove unused reset token if email delivery fails.
+      admin.passwordResetToken = null;
+      admin.passwordResetExpires = null;
 
-      user.passwordResetToken = null;
-      user.passwordResetExpires = null;
-
-      await user.save();
+      await admin.save();
 
       throw error;
     }
@@ -423,7 +492,7 @@ export const forgotPassword = asyncHandler(
 );
 
 // ==========================================
-// 7. RESET PASSWORD
+// 7. RESET ADMIN PASSWORD
 // POST /api/auth/reset-password/:token
 // ==========================================
 
@@ -452,36 +521,36 @@ export const resetPassword = asyncHandler(
 
     const hashedToken = hashToken(token);
 
-    const user = await User.findOne({
+    const admin = await Admin.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: {
         $gt: new Date(),
       },
     }).select(
-      "+passwordResetToken +passwordResetExpires"
+      "+passwordResetToken +passwordResetExpires +refreshTokenHash"
     );
 
-    if (!user) {
+    if (!admin) {
       return errorResponse(res, {
         statusCode: 400,
         message: "Invalid or expired password reset token.",
       });
     }
 
-    user.password = password;
+    admin.password = password;
 
-    user.passwordResetToken = null;
-    user.passwordResetExpires = null;
+    admin.passwordResetToken = null;
+    admin.passwordResetExpires = null;
 
-    // Revoke any existing refresh token after password reset.
+    // Revoke the existing refresh token after password reset.
 
-    user.refreshTokenHash = null;
+    admin.refreshTokenHash = null;
 
-    await user.save();
+    await admin.save();
 
     return successResponse(res, {
       statusCode: 200,
-      message: "Password reset successful. Please login again.",
+      message: "Admin password reset successful. Please login again.",
     });
   }
 );

@@ -1,11 +1,14 @@
 
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+
+import Admin from "../models/Admin.js";
+
 import asyncHandler from "../utils/asyncHandler.js";
+
 import { errorResponse } from "../utils/response.js";
 
 // ==========================================
-// PROTECT ROUTES
+// PROTECT ADMIN ROUTES
 // ==========================================
 
 export const protect = asyncHandler(async (req, res, next) => {
@@ -30,57 +33,45 @@ export const protect = asyncHandler(async (req, res, next) => {
     });
   }
 
+  let decoded;
+
+  // Verify JWT separately so database errors are not
+  // incorrectly reported as authentication errors.
+
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    const user = await User.findById(decoded.id).select(
-      "name email role createdAt"
-    );
-
-    if (!user) {
-      return errorResponse(res, {
-        statusCode: 401,
-        message: "User account not found.",
-      });
-    }
-
-    req.user = user;
-
-    next();
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
     return errorResponse(res, {
       statusCode: 401,
       message:
         error.name === "TokenExpiredError"
-          ? "Access token expired."
+          ? "Access token expired. Please login again."
           : "Invalid access token.",
     });
   }
+
+  if (
+    !decoded.id ||
+    decoded.id !== "primary-admin"
+  ) {
+    return errorResponse(res, {
+      statusCode: 401,
+      message: "Invalid admin authentication token.",
+    });
+  }
+
+  const admin = await Admin.findById(decoded.id).select(
+    "name email createdAt"
+  );
+
+  if (!admin) {
+    return errorResponse(res, {
+      statusCode: 401,
+      message: "Admin account not found.",
+    });
+  }
+
+  req.admin = admin;
+
+  next();
 });
-
-// ==========================================
-// ROLE-BASED AUTHORIZATION
-// ==========================================
-
-export const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return errorResponse(res, {
-        statusCode: 401,
-        message: "Authentication required.",
-      });
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return errorResponse(res, {
-        statusCode: 403,
-        message: "You do not have permission to access this resource.",
-      });
-    }
-
-    next();
-  };
-};
