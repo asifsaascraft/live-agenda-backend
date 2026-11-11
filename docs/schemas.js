@@ -1,4 +1,3 @@
-
 export const schemas = {
   // ==========================================
   // ADMIN SCHEMA
@@ -31,6 +30,112 @@ export const schemas = {
     },
   },
 
+  Hall: {
+    type: "object",
+    properties: {
+      _id: {
+        type: "string",
+        example: "672b12345678901234567890",
+      },
+      hallName: {
+        type: "string",
+        example: "Main Auditorium",
+      },
+      status: {
+        type: "string",
+        enum: ["Active", "Inactive"],
+        example: "Active",
+      },
+      createdAt: {
+        type: "string",
+        format: "date-time",
+      },
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+      },
+    },
+  },
+
+  // ==========================================
+  // TRACK SCHEMA
+  // ==========================================
+
+  Track: {
+    type: "object",
+    properties: {
+      _id: {
+        type: "string",
+        example: "672b12345678901234567891",
+      },
+
+      trackName: {
+        type: "string",
+        example: "General Medicine",
+      },
+
+      status: {
+        type: "string",
+        enum: ["Active", "Inactive"],
+        example: "Active",
+      },
+
+      createdAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+    },
+  },
+
+  // ==========================================
+  // FACULTY SCHEMA
+  // ==========================================
+
+  Faculty: {
+    type: "object",
+    properties: {
+      _id: {
+        type: "string",
+        example: "672b12345678901234567892",
+      },
+
+      fullName: {
+        type: "string",
+        example: "Dr. Asif Jamal",
+      },
+
+      email: {
+        type: "string",
+        format: "email",
+        example: "asif@example.com",
+      },
+
+      mobile: {
+        type: "string",
+        example: "9876543210",
+      },
+
+      createdAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+    },
+  },
+
   // ==========================================
   // ADMIN SETUP RESPONSE
   // ==========================================
@@ -45,8 +150,7 @@ export const schemas = {
 
       message: {
         type: "string",
-        example:
-          "Admin account created successfully. Please login.",
+        example: "Admin account created successfully. Please login.",
       },
 
       data: {
@@ -107,8 +211,7 @@ export const schemas = {
 
       message: {
         type: "string",
-        example:
-          "Access token refreshed successfully.",
+        example: "Access token refreshed successfully.",
       },
 
       data: {

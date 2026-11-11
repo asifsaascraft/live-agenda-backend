@@ -1,17 +1,16 @@
 
 import authPaths from "./auth.swagger.js";
-
-// ==========================================
-// ALL API DOCUMENTATION PATHS
-// ==========================================
+import hallPaths from "./hall.swagger.js";
+import trackPaths from "./track.swagger.js";
+import facultyPaths from "./faculty.swagger.js";
 
 const paths = {
   ...authPaths,
+  ...hallPaths,
+  ...trackPaths,
+  ...facultyPaths,
 
-  // Future modules:
-  // ...agendaPaths,
-  // ...eventPaths,
-  // ...venuePaths,
+  // Add future module paths here.
 };
 
 export default paths;

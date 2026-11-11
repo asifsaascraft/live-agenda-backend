@@ -12,6 +12,9 @@ import { connectRedis } from "./config/redis.js";
 
 import swaggerRoutes from "./routes/swaggerRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import hallRoutes from "./routes/hallRoutes.js";
+import trackRoutes from "./routes/trackRoutes.js";
+import facultyRoutes from "./routes/facultyRoutes.js";
 
 import errorHandler from "./middlewares/errorHandler.js";
 
@@ -142,6 +145,9 @@ app.use("/api-docs", swaggerRoutes);
 // ==========================================
 
 app.use("/api/auth", authRoutes);
+app.use("/api/halls", hallRoutes);
+app.use("/api/tracks", trackRoutes);
+app.use("/api/faculties", facultyRoutes);
 
 // ==========================================
 // 404 ROUTE
