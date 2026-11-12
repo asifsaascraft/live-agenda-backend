@@ -137,6 +137,75 @@ export const schemas = {
   },
 
   // ==========================================
+  // SESSION SCHEMA
+  // ==========================================
+
+  Session: {
+    type: "object",
+    properties: {
+      _id: {
+        type: "string",
+        example: "672b12345678901234567893",
+      },
+
+      sessionName: {
+        type: "string",
+        example: "Inauguration Session",
+      },
+
+      sessionDate: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-12T04:30:00.000Z",
+      },
+
+      startTime: {
+        type: "string",
+        example: "10:00 AM",
+      },
+
+      endTime: {
+        type: "string",
+        example: "11:00 AM",
+      },
+
+      chairperson: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            _id: {
+              type: "string",
+              example: "672b12345678901234567892",
+            },
+            fullName: {
+              type: "string",
+              example: "Dr. Asif Jamal",
+            },
+            email: {
+              type: "string",
+              format: "email",
+              example: "asif@example.com",
+            },
+          },
+        },
+      },
+
+      createdAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+
+      updatedAt: {
+        type: "string",
+        format: "date-time",
+        example: "2026-11-11T10:00:00.000Z",
+      },
+    },
+  },
+
+  // ==========================================
   // ADMIN SETUP RESPONSE
   // ==========================================
 
