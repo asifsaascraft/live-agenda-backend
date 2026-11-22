@@ -46,7 +46,7 @@ const ALLOWED_SORT_FIELDS = [
 // Populate Chairperson
 const populateChairperson = {
   path: "chairperson",
-  select: "fullName email",
+  select: "fullName email mobile",
 };
 
 // Populate Hall - only hallName

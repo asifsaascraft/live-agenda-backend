@@ -782,8 +782,9 @@ export const getPublicSessionById = asyncHandler(
   }
 );
 
+
 // ==========================================
-// GET PUBLIC TOPICS WITH PAGINATION
+// GET PUBLIC TOPICS WITHOUT PAGINATION
 // GET /api/public/topics
 // ==========================================
 
@@ -798,8 +799,6 @@ export const getPublicTopics = asyncHandler(
       date,
       facultyId,
     } = req.query;
-
-    const { page, limit, skip } = getPagination(req);
 
     const filterQuery = {};
 
@@ -926,16 +925,11 @@ export const getPublicTopics = asyncHandler(
       }
     }
 
-    const [topics, total] = await Promise.all([
-      Topic.find(filterQuery)
-        .populate(publicTopicPopulation)
-        .sort({ startTime: 1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-
-      Topic.countDocuments(filterQuery),
-    ]);
+    // Fetch all matching public topics
+    const topics = await Topic.find(filterQuery)
+      .populate(publicTopicPopulation)
+      .sort({ startTime: 1 })
+      .lean();
 
     const publicTopics = topics.filter(
       (topic) =>
@@ -944,20 +938,17 @@ export const getPublicTopics = asyncHandler(
         topic.sessionId.trackId
     );
 
-    const pagination = buildPaginationMeta(
-      total,
-      page,
-      limit
-    );
-
     return successResponse(res, {
       statusCode: 200,
       message: "Public topics fetched successfully.",
-      data: { topics: publicTopics },
-      pagination,
+      data: {
+        topics: publicTopics,
+      },
     });
   }
 );
+
+
 
 // ==========================================
 // GET PUBLIC TOPIC BY ID

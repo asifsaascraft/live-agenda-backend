@@ -4,9 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-  "start": "node bootstrap.js",
-  "dev": "nodemon bootstrap.js"
-},
+    "start": "node bootstrap.js",
+    "dev": "nodemon bootstrap.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -28,7 +28,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "multer-s3": "^3.0.1",
-    "redis": "^6.1.0",
+    "redis": "^6.3.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^14.0.1",

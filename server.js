@@ -16,7 +16,7 @@ import facultyRoutes from "./routes/facultyRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import topicRoutes from "./routes/topicRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
-
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
 // ==========================================
@@ -35,7 +35,7 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  "http://localhost:3002",
+  "http://192.168.1.6:3000",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -152,6 +152,7 @@ app.use("/api/faculties", facultyRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ==========================================
 // 404 ROUTE

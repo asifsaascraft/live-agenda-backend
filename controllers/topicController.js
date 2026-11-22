@@ -66,19 +66,19 @@ const ALLOWED_TOPIC_TYPES = [
 const populateFacultyFields = [
   {
     path: "facultyId",
-    select: "fullName email",
+    select: "fullName email mobile",
   },
   {
     path: "moderatorId",
-    select: "fullName email",
+    select: "fullName email mobile",
   },
   {
     path: "panelistId",
-    select: "fullName email",
+    select: "fullName email mobile",
   },
   {
     path: "expertPanelistId",
-    select: "fullName email",
+    select: "fullName email mobile",
   },
 ];
 
@@ -87,7 +87,7 @@ const populateSession = {
   path: "sessionId",
   populate: {
     path: "chairperson",
-    select: "fullName email",
+    select: "fullName email mobile",
   },
 };
 
